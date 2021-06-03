@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import Player from "./Player";
+import Resource from "./Resource";
 
 export default class MainScene extends Phaser.Scene {
   constructor() {
@@ -7,6 +8,7 @@ export default class MainScene extends Phaser.Scene {
   }
   player: Player;
   testPlayer: Player;
+  map: Phaser.Tilemaps.Tilemap;
 
   init(params: any): void {
     // TODO
@@ -16,22 +18,23 @@ export default class MainScene extends Phaser.Scene {
   create() {
     this.testPlayer = new Player({
       scene: this,
-      x: 100,
-      y: 100,
+      x: 150,
+      y: 150,
       texture: "townsfolk_female",
       frame: "townsfolk_f_idle_1",
     });
 
     this.player = new Player({
       scene: this,
-      x: 50,
-      y: 50,
+      x: 250,
+      y: 250,
       texture: "townsfolk_female",
       frame: "townsfolk_f_idle_1",
     });
 
     const map = this.make.tilemap({ key: "map" });
-    const tileset = map.addTilesetImage(
+    this.map = map;
+    const tileset = this.map.addTilesetImage(
       "RPG Nature Tileset",
       "tiles",
       32,
@@ -39,11 +42,15 @@ export default class MainScene extends Phaser.Scene {
       0,
       0
     );
-    const layer1 = map.createLayer("Tile Layer 1", tileset);
-    const layer2 = map.createLayer("Tile Layer 2", tileset);
+    const layer1 = this.map.createLayer("Tile Layer 1", tileset);
+    const layer2 = this.map.createLayer("Tile Layer 2", tileset);
 
     layer1.setCollisionByProperty({ collides: true });
     this.matter.world.convertTilemapLayer(layer1);
+
+    this.map
+      .getObjectLayer("Resources")
+      .objects.forEach((resource) => new Resource({ scene: this, resource }));
 
     this.player.inputKeys = this.input.keyboard.addKeys({
       up: Phaser.Input.Keyboard.KeyCodes.W,
@@ -59,6 +66,7 @@ export default class MainScene extends Phaser.Scene {
     Player.preload(this);
     this.load.image("tiles", "assets/images/RPG Nature Tileset.png");
     this.load.tilemapTiledJSON("map", "assets/images/map.json");
+    Resource.preload(this);
   }
 
   update(time: integer) {
