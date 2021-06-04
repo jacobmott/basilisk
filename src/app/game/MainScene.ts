@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import Player from "./Player";
 import Resource from "./Resource";
+import PhaserMatterCollisionPlugin from 'phaser-matter-collision-plugin';
 
 export default class MainScene extends Phaser.Scene {
   constructor() {
@@ -9,6 +10,7 @@ export default class MainScene extends Phaser.Scene {
   player: Player;
   testPlayer: Player;
   map: Phaser.Tilemaps.Tilemap;
+  matterCollision: any;
 
   init(params: any): void {
     // TODO
@@ -16,7 +18,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   create() {
-
+    
     const map = this.make.tilemap({ key: "map" });
     this.map = map;
     const tileset = this.map.addTilesetImage(

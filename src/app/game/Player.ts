@@ -1,5 +1,6 @@
 import { THIS_EXPR } from "@angular/compiler/src/output/output_ast";
 import Phaser from "phaser";
+import MainScene from "./MainScene";
 
 export default class Player extends Phaser.Physics.Matter.Sprite {
   readonly speed: number;
@@ -7,11 +8,14 @@ export default class Player extends Phaser.Physics.Matter.Sprite {
   phaserPhysics: Phaser.Physics.Matter.MatterPhysics;
   spriteWeapon: Phaser.GameObjects.Sprite;
   weaponRotation: number;
+  scene: MainScene; 
+  touching: Phaser.GameObjects.GameObject[];
 
   constructor(data) {
     let { scene, x, y, texture, frame } = data;
     super(scene.matter.world, x, y, texture, frame);
     this.speed = 2.5;
+    this.touching = [];
     this.scene = scene;
     this.weaponRotation = 0;
     this.spriteWeapon = new Phaser.GameObjects.Sprite(scene,20,20,'items',162);
@@ -38,10 +42,11 @@ export default class Player extends Phaser.Physics.Matter.Sprite {
     this.scene.add.existing(this.spriteWeapon);
     this.scene.add.existing(this);
 
+    this.CreateMiningCollisions(playerSensor);
     this.scene.input.on('pointermove',pointer => this.setFlipX(pointer.worldX < this.x));
   }
 
-  static preload(scene: Phaser.Scene) {
+  static preload(scene: MainScene) {
     //make sure that the key here when loading the atlas, matches the key specified in townsfolk_female_anim.json animation file,
     //otherwise the animations wont be able to find/access the loaded spritesheet
     scene.load.atlas(
@@ -58,6 +63,29 @@ export default class Player extends Phaser.Physics.Matter.Sprite {
       "assets/images/items.png",
       {frameWidth:32,frameHeight:32}
     );
+  }
+
+  CreateMiningCollisions(playerSensor: MatterJS.BodyType){
+
+    this.scene.matterCollision.addOnCollideStart({
+      objectA:[playerSensor],
+      callback: other => {
+        if(other.bodyB.isSensor) return;
+        this.touching.push(other.gameObjectB);  
+        console.log(this.touching.length,other.gameObjectB.name);
+      },
+      context: this.scene,
+    });
+
+    this.scene.matterCollision.addOnCollideEnd({
+      objectA:[playerSensor],
+      callback: other => {
+        this.touching = this.touching.filter(gameObject => gameObject != other.gameObjectB);
+        console.log(this.touching.length);
+      },
+      context: this.scene,
+    });
+
   }
 
   update(time: integer) {
