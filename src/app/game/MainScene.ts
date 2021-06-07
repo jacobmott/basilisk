@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import Player from "./Player";
 import Resource from "./Resource";
-import PhaserMatterCollisionPlugin from 'phaser-matter-collision-plugin';
+import PhaserMatterCollisionPlugin from "phaser-matter-collision-plugin";
 
 export default class MainScene extends Phaser.Scene {
   constructor() {
@@ -18,7 +18,6 @@ export default class MainScene extends Phaser.Scene {
   }
 
   create() {
-    
     const map = this.make.tilemap({ key: "map" });
     this.map = map;
     const tileset = this.map.addTilesetImage(
@@ -45,8 +44,8 @@ export default class MainScene extends Phaser.Scene {
       y: 250,
       texture: "townsfolk_female",
       frame: "townsfolk_f_idle_1",
-    });     
-    
+    });
+
     //this.testPlayer = new Player({
     //  scene: this,
     //  x: 150,
@@ -61,7 +60,6 @@ export default class MainScene extends Phaser.Scene {
       left: Phaser.Input.Keyboard.KeyCodes.A,
       right: Phaser.Input.Keyboard.KeyCodes.D,
     });
-
   }
 
   preload() {

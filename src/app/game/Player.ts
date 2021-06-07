@@ -1,6 +1,7 @@
 import { THIS_EXPR } from "@angular/compiler/src/output/output_ast";
 import Phaser from "phaser";
 import MainScene from "./MainScene";
+import Resource from "./Resource";
 
 export default class Player extends Phaser.Physics.Matter.Sprite {
   readonly speed: number;
@@ -8,8 +9,9 @@ export default class Player extends Phaser.Physics.Matter.Sprite {
   phaserPhysics: Phaser.Physics.Matter.MatterPhysics;
   spriteWeapon: Phaser.GameObjects.Sprite;
   weaponRotation: number;
-  scene: MainScene; 
-  touching: Phaser.GameObjects.GameObject[];
+  scene: MainScene;
+  //this is either a resource or a sprite
+  touching: (Resource | Phaser.GameObjects.Sprite)[];
 
   constructor(data) {
     let { scene, x, y, texture, frame } = data;
@@ -18,9 +20,15 @@ export default class Player extends Phaser.Physics.Matter.Sprite {
     this.touching = [];
     this.scene = scene;
     this.weaponRotation = 0;
-    this.spriteWeapon = new Phaser.GameObjects.Sprite(scene,20,20,'items',162);
+    this.spriteWeapon = new Phaser.GameObjects.Sprite(
+      scene,
+      20,
+      20,
+      "items",
+      162
+    );
     this.spriteWeapon.setScale(0.8);
-    this.spriteWeapon.setOrigin(0.25,0.75);
+    this.spriteWeapon.setOrigin(0.25, 0.75);
 
     this.phaserPhysics = new Phaser.Physics.Matter.MatterPhysics(scene);
     const Body = this.phaserPhysics.body;
@@ -43,7 +51,11 @@ export default class Player extends Phaser.Physics.Matter.Sprite {
     this.scene.add.existing(this);
 
     this.CreateMiningCollisions(playerSensor);
-    this.scene.input.on('pointermove',pointer => this.setFlipX(pointer.worldX < this.x));
+    this.CreatePickupCollisions(playerCollider);
+
+    this.scene.input.on("pointermove", (pointer) =>
+      this.setFlipX(pointer.worldX < this.x)
+    );
   }
 
   static preload(scene: MainScene) {
@@ -58,34 +70,53 @@ export default class Player extends Phaser.Physics.Matter.Sprite {
       "townsfolk_female_anim",
       "assets/images/townsfolk_female_anim.json"
     );
-    scene.load.spritesheet(
-      "items",
-      "assets/images/items.png",
-      {frameWidth:32,frameHeight:32}
-    );
+    scene.load.spritesheet("items", "assets/images/items.png", {
+      frameWidth: 32,
+      frameHeight: 32,
+    });
   }
 
-  CreateMiningCollisions(playerSensor: MatterJS.BodyType){
-
+  CreateMiningCollisions(playerSensor: MatterJS.BodyType) {
     this.scene.matterCollision.addOnCollideStart({
-      objectA:[playerSensor],
-      callback: other => {
-        if(other.bodyB.isSensor) return;
-        this.touching.push(other.gameObjectB);  
-        console.log(this.touching.length,other.gameObjectB.name);
+      objectA: [playerSensor],
+      callback: (other) => {
+        if (other.bodyB.isSensor) return;
+        this.touching.push(other.gameObjectB);
+        console.log(this.touching.length, other.gameObjectB.name);
       },
       context: this.scene,
     });
 
     this.scene.matterCollision.addOnCollideEnd({
-      objectA:[playerSensor],
-      callback: other => {
-        this.touching = this.touching.filter(gameObject => gameObject != other.gameObjectB);
+      objectA: [playerSensor],
+      callback: (other) => {
+        this.touching = this.touching.filter(
+          (gameObject) => gameObject != other.gameObjectB
+        );
         console.log(this.touching.length);
       },
       context: this.scene,
     });
+  }
 
+  CreatePickupCollisions(playerCollider: MatterJS.BodyType) {
+    this.scene.matterCollision.addOnCollideStart({
+      objectA: [playerCollider],
+      callback: (other) => {
+        if (other.gameObjectB && other.gameObjectB.pickup)
+          other.gameObjectB.pickup();
+      },
+      context: this.scene,
+    });
+
+    this.scene.matterCollision.addOnCollideEnd({
+      objectA: [playerCollider],
+      callback: (other) => {
+        if (other.gameObjectB && other.gameObjectB.pickup)
+          other.gameObjectB.pickup();
+      },
+      context: this.scene,
+    });
   }
 
   update(time: integer) {
@@ -115,26 +146,35 @@ export default class Player extends Phaser.Physics.Matter.Sprite {
     this.weaponRotate();
   }
 
-
-  weaponRotate(){
+  weaponRotate() {
     let pointer = this.scene.input.activePointer;
-    if (pointer.isDown){
+    if (pointer.isDown) {
       this.weaponRotation += 6;
-    }
-    else{
+    } else {
       this.weaponRotation += 0;
     }
-    if(this.weaponRotation > 100){
+    if (this.weaponRotation > 100) {
+      this.whackStuff();
       this.weaponRotation = 0;
     }
-    if (this.flipX){
-      this.spriteWeapon.setAngle(-this.weaponRotation-90);
-    }
-    else{
+    if (this.flipX) {
+      this.spriteWeapon.setAngle(-this.weaponRotation - 90);
+    } else {
       this.spriteWeapon.setAngle(this.weaponRotation);
     }
-
   }
 
-
+  whackStuff() {
+    //filter out only game objects that support the hit function
+    this.touching = this.touching.filter(
+      (gameObject) =>
+        typeof gameObject["hit"] === "function" && !gameObject.dead
+    );
+    this.touching.forEach((gameObject) => {
+      gameObject.hit();
+      if (gameObject.dead) {
+        gameObject.destroy();
+      }
+    });
+  }
 }
