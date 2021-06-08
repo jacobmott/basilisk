@@ -12,12 +12,14 @@ export default class Player extends Phaser.Physics.Matter.Sprite {
   scene: MainScene;
   //this is either a resource or a sprite
   touching: (Resource | Phaser.GameObjects.Sprite)[];
+  resourceTouching: Resource[];
 
   constructor(data) {
     let { scene, x, y, texture, frame } = data;
     super(scene.matter.world, x, y, texture, frame);
     this.speed = 2.5;
     this.touching = [];
+    this.resourceTouching = [];
     this.scene = scene;
     this.weaponRotation = 0;
     this.spriteWeapon = new Phaser.GameObjects.Sprite(
@@ -166,11 +168,11 @@ export default class Player extends Phaser.Physics.Matter.Sprite {
 
   whackStuff() {
     //filter out only game objects that support the hit function
-    this.touching = this.touching.filter(
+    this.resourceTouching = <Resource[]>this.touching.filter(
       (gameObject) =>
-        typeof gameObject["hit"] === "function" && !gameObject.dead
+        gameObject instanceof Resource && !gameObject.dead
     );
-    this.touching.forEach((gameObject) => {
+    this.resourceTouching.forEach((gameObject) => {
       gameObject.hit();
       if (gameObject.dead) {
         gameObject.destroy();
