@@ -2,8 +2,9 @@ import { THIS_EXPR } from "@angular/compiler/src/output/output_ast";
 import Phaser from "phaser";
 import MainScene from "./MainScene";
 import Resource from "./Resource";
+import MatterEntity from "./MatterEntity";
 
-export default class Player extends Phaser.Physics.Matter.Sprite {
+export default class Player extends MatterEntity {
   readonly speed: number;
   inputKeys: any;
   phaserPhysics: Phaser.Physics.Matter.MatterPhysics;
@@ -16,7 +17,8 @@ export default class Player extends Phaser.Physics.Matter.Sprite {
 
   constructor(data) {
     let { scene, x, y, texture, frame } = data;
-    super(scene.matter.world, x, y, texture, frame);
+    //super(scene.matter.world, x, y, texture, frame);
+    super({...data,health:2,drops:[],name:'player'});
     this.speed = 2.5;
     this.touching = [];
     this.resourceTouching = [];
@@ -50,7 +52,6 @@ export default class Player extends Phaser.Physics.Matter.Sprite {
     this.setExistingBody(compoundBody);
     this.setFixedRotation();
     this.scene.add.existing(this.spriteWeapon);
-    this.scene.add.existing(this);
 
     this.CreateMiningCollisions(playerSensor);
     this.CreatePickupCollisions(playerCollider);
@@ -76,6 +77,7 @@ export default class Player extends Phaser.Physics.Matter.Sprite {
       frameWidth: 32,
       frameHeight: 32,
     });
+    scene.load.audio('player','assets/audio/damage.wav');
   }
 
   CreateMiningCollisions(playerSensor: MatterJS.BodyType) {
@@ -168,9 +170,10 @@ export default class Player extends Phaser.Physics.Matter.Sprite {
 
   whackStuff() {
     //filter out only game objects that support the hit function
-    this.resourceTouching = <Resource[]>this.touching.filter(
-      (gameObject) =>
-        gameObject instanceof Resource && !gameObject.dead
+    this.resourceTouching = <Resource[]>(
+      this.touching.filter(
+        (gameObject) => gameObject instanceof Resource && !gameObject.dead
+      )
     );
     this.resourceTouching.forEach((gameObject) => {
       gameObject.hit();

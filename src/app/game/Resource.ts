@@ -1,13 +1,13 @@
 import Phaser from "phaser";
-import DropItem from "./DropItem";
+import MatterEntity from "./MatterEntity";
 
-export default class Resource extends Phaser.Physics.Matter.Sprite {
+export default class Resource extends MatterEntity {
+
   phaserPhysics: Phaser.Physics.Matter.MatterPhysics;
   health: number;
   scene: Phaser.Scene;
   sound: Phaser.Sound.BaseSound;
   name: string;
-  drops: number[];
 
   static preload(scene: Phaser.Scene) {
     scene.load.atlas(
@@ -23,56 +23,26 @@ export default class Resource extends Phaser.Physics.Matter.Sprite {
 
   constructor(data) {
     let { scene, resource } = data;
-    super(
-      scene.matter.world,
-      resource.x,
-      resource.y,
-      "resources",
-      resource.type
-    );
-    this.health = 5;
-    this.scene = scene;
-    this.phaserPhysics = new Phaser.Physics.Matter.MatterPhysics(scene);
-    this.scene.add.existing(this);
-    this.name = resource.type;
-    this.sound = this.scene.sound.add(this.name);
-
-    const Body = this.phaserPhysics.body;
-    const Bodies = this.phaserPhysics.bodies;
-
-    this.drops = JSON.parse(
+    let drops = JSON.parse(
       resource.properties.find((p) => p.name == "drops").value
     );
+    let depth = resource.properties.find((p) => p.name == "depth").value;
+    super({scene,x:resource.x,y:resource.y,texture:'resources',frame:resource.type,drops,depth,health:5,name:resource.type});
+    this.scene = scene;
+    this.phaserPhysics = new Phaser.Physics.Matter.MatterPhysics(scene);
+
+    const Bodies = this.phaserPhysics.bodies;
     let yOrigin = resource.properties.find((p) => p.name == "yOrigin").value;
     this.name = resource.type;
-    this.x += this.width / 2;
-    this.y -= this.height / 2;
     this.y = this.y + this.height * (yOrigin - 0.5);
     let collider = Bodies.circle(this.x, this.y, 12, {
       isSensor: false,
       label: "collider",
     });
     this.setExistingBody(collider);
-    //resourceItem.setFixedRotation();
     this.setStatic(true);
     this.setOrigin(0.5, yOrigin);
   }
 
-  get dead() {
-    return this.health <= 0;
-  }
 
-  hit() {
-    if (this.sound) {
-      this.sound.play();
-    }
-    this.health--;
-    console.log(`Hitting: ${this.name} Health: ${this.health}`);
-    if (this.dead) {
-      this.drops.forEach((drop) => {
-        console.log(drop);
-        new DropItem({ scene: this.scene, x: this.x, y: this.y, frame: drop });
-      });
-    }
-  }
 }
