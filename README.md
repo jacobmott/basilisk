@@ -1,5 +1,8 @@
 # Basilisk
 
+This is the survival game course/tutorial; https://morganpage.teachable.com/courses/901410/lectures/18385964
+https://morganpage.teachable.com/courses/901410/lectures/18385964
+
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 8.3.6.
 
 ## Development server
