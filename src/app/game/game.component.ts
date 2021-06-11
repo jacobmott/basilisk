@@ -21,12 +21,16 @@ export class GameComponent implements OnInit {
       scene: [MainScene],
       scale: {
         zoom: 2,
+        // Fit to window
+        mode: Phaser.Scale.FIT,
+        // Center vertically and horizontally
+        autoCenter: Phaser.Scale.CENTER_BOTH,
       },
       parent: "gameContainer",
       physics: {
         default: "matter",
         matter: {
-          debug: true,
+          debug: false,
           gravity: { y: 0 },
         },
       },

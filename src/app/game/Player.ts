@@ -12,14 +12,15 @@ export default class Player extends MatterEntity {
   weaponRotation: number;
   scene: MainScene;
   //this is either a resource or a sprite
-  touching: (Resource | Phaser.GameObjects.Sprite)[];
+  touching: MatterEntity[];
   resourceTouching: Resource[];
+  lastTime: number;
 
   constructor(data) {
     let { scene, x, y, texture, frame } = data;
     //super(scene.matter.world, x, y, texture, frame);
-    super({...data,health:2,drops:[],name:'player'});
-    this.speed = 2.5;
+    super({ ...data, health: 20, drops: [], name: "player" });
+    this.speed = 128.0;
     this.touching = [];
     this.resourceTouching = [];
     this.scene = scene;
@@ -33,7 +34,7 @@ export default class Player extends MatterEntity {
     );
     this.spriteWeapon.setScale(0.8);
     this.spriteWeapon.setOrigin(0.25, 0.75);
-
+    this.lastTime = 0;
     this.phaserPhysics = new Phaser.Physics.Matter.MatterPhysics(scene);
     const Body = this.phaserPhysics.body;
     const Bodies = this.phaserPhysics.bodies;
@@ -77,7 +78,7 @@ export default class Player extends MatterEntity {
       frameWidth: 32,
       frameHeight: 32,
     });
-    scene.load.audio('player','assets/audio/damage.wav');
+    scene.load.audio("player", "assets/audio/damage.wav");
   }
 
   CreateMiningCollisions(playerSensor: MatterJS.BodyType) {
@@ -123,7 +124,23 @@ export default class Player extends MatterEntity {
     });
   }
 
-  update(time: integer) {
+  onDeath() {
+    this.anims.stop();
+    this.setTexture("items", 0);
+    this.setOrigin(0.5);
+    this.spriteWeapon.destroy();
+  }
+
+  update(time: number) {
+    if (this.lastTime == 0) {
+      this.lastTime = time;
+    }
+    let deltaTime = time - this.lastTime;
+    this.lastTime = time;
+    //console.log("deltaTime: "+deltaTime);
+    if (this.dead) {
+      return;
+    }
     let currentVelocity = new Phaser.Math.Vector2();
     if (this.inputKeys.left.isDown) {
       currentVelocity.x = -1;
@@ -137,6 +154,7 @@ export default class Player extends MatterEntity {
     }
     currentVelocity.normalize();
     currentVelocity.scale(this.speed);
+    currentVelocity.scale(deltaTime);
     this.setVelocity(currentVelocity.x, currentVelocity.y);
     if (
       Math.abs(currentVelocity.x) > 0.1 ||
@@ -148,6 +166,11 @@ export default class Player extends MatterEntity {
     }
     this.spriteWeapon.setPosition(this.x, this.y);
     this.weaponRotate();
+    if (Math.abs(this.velocity.x) > 0.1 || Math.abs(this.velocity.y) > 0.1) {
+      this.anims.play("walk", true);
+    } else {
+      this.anims.play("idle", true);
+    }
   }
 
   weaponRotate() {
@@ -170,12 +193,10 @@ export default class Player extends MatterEntity {
 
   whackStuff() {
     //filter out only game objects that support the hit function
-    this.resourceTouching = <Resource[]>(
-      this.touching.filter(
-        (gameObject) => gameObject instanceof Resource && !gameObject.dead
-      )
+    this.touching = this.touching.filter(
+      (gameObject) => gameObject instanceof MatterEntity && !gameObject.dead
     );
-    this.resourceTouching.forEach((gameObject) => {
+    this.touching.forEach((gameObject) => {
       gameObject.hit();
       if (gameObject.dead) {
         gameObject.destroy();

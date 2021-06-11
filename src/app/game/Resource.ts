@@ -2,7 +2,6 @@ import Phaser from "phaser";
 import MatterEntity from "./MatterEntity";
 
 export default class Resource extends MatterEntity {
-
   phaserPhysics: Phaser.Physics.Matter.MatterPhysics;
   health: number;
   scene: Phaser.Scene;
@@ -27,7 +26,17 @@ export default class Resource extends MatterEntity {
       resource.properties.find((p) => p.name == "drops").value
     );
     let depth = resource.properties.find((p) => p.name == "depth").value;
-    super({scene,x:resource.x,y:resource.y,texture:'resources',frame:resource.type,drops,depth,health:5,name:resource.type});
+    super({
+      scene,
+      x: resource.x,
+      y: resource.y,
+      texture: "resources",
+      frame: resource.type,
+      drops,
+      depth,
+      health: 5,
+      name: resource.type,
+    });
     this.scene = scene;
     this.phaserPhysics = new Phaser.Physics.Matter.MatterPhysics(scene);
 
@@ -43,6 +52,4 @@ export default class Resource extends MatterEntity {
     this.setStatic(true);
     this.setOrigin(0.5, yOrigin);
   }
-
-
 }
